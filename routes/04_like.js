@@ -26,40 +26,33 @@ router.put("/posts/:postId/like", authMiddleware, async (req, res) => {
     return res.status(404).json({ message: "게시글을 찾을 수 없습니다." });
   }
 
-  const didILike = await Likes.findOne({
-    where: { [Op.and]: [{ PostId: postId }, { UserId: userId }] },
-  });
-  console.log("좋아요했던가?", didILike);
-
-  // 현재 사용자가, 이 게시글을 좋아요 했는가?
-  // 이거를 확인을 하고 싶은데
-  // likeid / userid / postid
-  //    1  /  1  /  1
-
-  //   await Comments.update(
-  //     {
-  //       likeId,
-  //       UserId: userId,
-  //       PostId: postId,
-  //     },
-  //     { where: { PostId: postId } }
-  //   );
-
   try {
     // 좋아요, 좋아요 취소 로직
-    console.log("try 안쪽까지는 들어옴");
-    //   # 200 게시글 좋아요 등록에 성공한 경우
+    const didILike = await Likes.findOne({
+      where: { [Op.and]: [{ PostId: postId }, { UserId: userId }] },
+    });
+    // console.log("좋아요했던가?", didILike);
 
-    // return res
-    //   .status(200)
-    //   .json({ message: "게시글의 좋아요를 등록하였습니다." });
+    if (!didILike) {
+      // 없다면 좋아요 등록
+      await Likes.create({ PostId: postId, UserId: userId });
+      return res.status(200).json({ LIKE: "해당 게시글에 좋아요 했습니다." });
+    } else if (didILike) {
+      // 있다면 좋아요 취소
+      await Likes.destroy({
+        where: { [Op.and]: [{ PostId: postId }, { UserId: userId }] },
+      });
 
-    // # 200 게시글 좋아요 취소에 성공한 경우
-
-    // return res.status(200).json({message:"게시글의 좋아요을 취소하였습니다."})
-    return;
+      return res
+        .status(200)
+        .json({ CANCEL: "해당 게시글의 좋아요를 취소했습니다." });
+    }
+    // 기능 작동은 하는데 이런 식으로 하면 likeId가 끝도없이 계속 늘어난다..
+    // 당장은 괜찮겠지만 12351235125 이 정도로 늘어나면 문제 생길텐데
   } catch (error) {
-    return res.status(400).json({ errorMessage: "좋아요 할 수 없습니다." });
+    return res
+      .status(400)
+      .json({ errorMessage: "좋아요 작업에 실패했습니다." });
   }
 });
 
@@ -106,6 +99,8 @@ router.get("/posts/like", authMiddleware, async (req, res) => {
   try {
     // 좋아요 조회 로직
     // return res.status(200).json({yourLIkePosts:likePosts})
+    console.log("try 안까진 들어옴");
+    return;
   } catch (error) {
     return res
       .status(400)
