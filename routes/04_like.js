@@ -19,12 +19,12 @@ router.put("/posts/:postId/like", authMiddleware, async (req, res) => {
     where: { postId: postId },
     attribute: ["liked"],
   });
-  //   console.log(post)
-  console.log("현재 게시글의 좋아요 수", post.dataValues.liked);
 
   if (!post) {
     return res.status(404).json({ message: "게시글을 찾을 수 없습니다." });
   }
+  console.log(post);
+  console.log("현재 게시글의 좋아요 수", post.dataValues.liked);
 
   try {
     // 좋아요, 좋아요 취소 로직
@@ -36,6 +36,7 @@ router.put("/posts/:postId/like", authMiddleware, async (req, res) => {
     if (!didILike) {
       // 없다면 좋아요 등록
       await Likes.create({ PostId: postId, UserId: userId });
+
       return res.status(200).json({ LIKE: "해당 게시글에 좋아요 했습니다." });
     } else if (didILike) {
       // 있다면 좋아요 취소
@@ -57,50 +58,56 @@ router.put("/posts/:postId/like", authMiddleware, async (req, res) => {
 });
 
 // 좋아요 게시글 조회 API
-router.get("/posts/like", authMiddleware, async (req, res) => {
+router.get("/likePost", authMiddleware, async (req, res) => {
   const { userId } = res.locals.user;
   if (!userId) {
     return res.status(403).json({ errorMessage: "로그인 후 사용 가능합니다." });
   }
 
-  // include 써서..?
-  // 내 계정의 좋아요한 게시글
-  // 좋아요 테이블에 있는 내 계정의 userid를 싹 불러와서
-  // 해당 행에서 postid를 불러오고...
+  // 앞으로 진행할 개선 사항
+  // posts 모델에 컬럼 liked를 추가한 이유는
+  // 게시글 상세 조회했을때
+  // 해당 게시글에 좋아요가 몇개 찍혀있는지 확인하고 싶어서
 
-  //   - 로그인 토큰에 해당하는 사용자가 좋아요 한 글에 한해서, 조회할 수 있게 하기
-  //   - 제목, 작성자명(nickname), 작성 날짜, 좋아요 갯수를 조회하기
+  // posts 모델에서 컬럼 liked 빼고, (혹은 사용하지 않되 일단 두고)
+  // 게시글 상세 조회에서의 좋아요는 Likes.findAll 해서 컬럼 PostId와
+  // 파라미터 postId가 일치하는 데이터 몇개인지 불러오는 식으로 처리할 것.
 
-  // const likePosts = await
-  //const posts = await Posts.findAll({
-  // include: [{ model: Users, attributes: ["email"] }],
-  // attributes: ["postId","userId", "email", "title", "createdAt", "updatedAt"],
-  // order: [["liked", "DESC"]],
-  //   });
-  // return res.status(200).json({posts:likePosts})
-  //   - 제일 좋아요가 많은 게시글을 맨 위에 정렬하기 (내림차순)
+  // 하고 싶은 것
+  // 현재 로그인한 사용자가 좋아요 등록했던 게시글을 나열
+  // 1. Likes 테이블에서 현재 로그인한 사용자와 userId가 같은 데이터 추출
 
-  // 로직
-  //   # 200 좋아요 게시글 조회에 성공한 경우
-  // {
-  // "posts": [
-  // {
-  // "postId": 4,
-  // "userId": 1,
-  // "nickname": "Developer",
-  // "title": "안녕하세요 4번째 게시글 제목입니다.",
-  // "createdAt": "2022-07-25T07:58:39.000Z",
-  // "updatedAt": "2022-07-25T07:58:39.000Z",
-  // "likes": 1
-  // }
-  // ]
-  // }
+  // 2. 1의 내용 중 PostID와 Posts 테이블의 postId가 일치하는 데이터를 추출
+
+  // 3. 2의 내용을 postId, userId, email, title, createdAt, updatedAt으로 출력
+
+  // 4. 좋아요 개수 파악하기
+
+  // 5. 좋아요가 높은 게시글부터 정렬
+
+  const likedPost = await Likes.findAll({
+    where: { UserId: userId },
+    attributes: ["UserId"],
+    include: {
+      model: Posts,
+      // where: { postId: postId },
+      attributes: [
+        "postId",
+        "UserId",
+        "title",
+        "content",
+        "createdAt",
+        "updatedAt",
+      ],
+    },
+    // order:[["liked", "DESC"]],
+  });
 
   try {
     // 좋아요 조회 로직
-    // return res.status(200).json({yourLIkePosts:likePosts})
     console.log("try 안까진 들어옴");
-    return;
+    return res.status(200).json({ yourLIkePosts: likedPost });
+    // return;
   } catch (error) {
     return res
       .status(400)
