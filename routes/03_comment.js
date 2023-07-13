@@ -17,7 +17,7 @@ router.post("/posts/:postId/comments", authMiddleware, async (req, res) => {
 
   if (!comment) {
     return res
-      .status(412)
+      .status(400)
       .json({ errorMessage: "댓글의 형식이 올바르지 않습니다." });
   }
 
@@ -47,20 +47,6 @@ router.get("/posts/:postId/comments", async (req, res) => {
     where: { PostId: postId },
   });
 
-  const comment = await Comments.findAll({
-    include: { model: Posts, attributes: ["postId", "UserId"] },
-    attributes: [
-      "commentId",
-      "UserId",
-      "PostId",
-      "comment",
-      "createdAt",
-      "updatedAt",
-    ],
-    where: { PostId: postId },
-    order: [["createdAt", "DESC"]],
-  });
-
   if (!isExistPost) {
     return res
       .status(404)
@@ -74,6 +60,19 @@ router.get("/posts/:postId/comments", async (req, res) => {
   }
 
   try {
+    const comment = await Comments.findAll({
+      include: { model: Posts, attributes: ["postId", "UserId"] },
+      attributes: [
+        "commentId",
+        "UserId",
+        "PostId",
+        "comment",
+        "createdAt",
+        "updatedAt",
+      ],
+      where: { PostId: postId },
+      order: [["createdAt", "DESC"]],
+    });
     return res.status(200).json({ comments: comment });
   } catch (error) {
     return res
@@ -132,7 +131,7 @@ router.put(
 
     if (!comment) {
       return res
-        .status(412)
+        .status(400)
         .json({ errorMessage: "댓글의 데이터 형식이 올바르지 않습니다." });
     }
 
@@ -201,14 +200,6 @@ router.delete(
     try {
       await Comments.destroy({
         where: { commentId: commentId },
-        attributes: [
-          "commentId",
-          "UserId",
-          "PostId",
-          "comment",
-          "createdAt",
-          "updatedAt",
-        ],
       });
       return res.status(200).json({ message: "댓글이 삭제되었습니다." });
     } catch (error) {

@@ -14,7 +14,7 @@ router.post("/users", async (req, res) => {
 
   if (!validEmailCheck(email) || email.length < 3) {
     return res
-      .status(412)
+      .status(400)
       .json({ errorMessage: "닉네임의 형식이 올바르지 않습니다." });
   }
 

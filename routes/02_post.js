@@ -15,14 +15,14 @@ router.post("/posts", authMiddleware, async (req, res) => {
 
   if (!title) {
     res
-      .status(412)
+      .status(400)
       .json({ errorMessage: "게시글 제목의 형식이 일치하지 않습니다." });
     return;
   }
 
   if (!content) {
     res
-      .status(412)
+      .status(400)
       .json({ errorMessage: "게시글 내용의 형식이 일치하지 않습니다." });
     return;
   }
@@ -127,14 +127,14 @@ router.put("/posts/:postId", authMiddleware, async (req, res) => {
 
   if (!title) {
     res
-      .status(412)
+      .status(400)
       .json({ errorMessage: "게시글 제목의 형식이 일치하지 않습니다." });
     return;
   }
 
   if (!content) {
     res
-      .status(412)
+      .status(400)
       .json({ errorMessage: "게시글 내용의 형식이 일치하지 않습니다." });
     return;
   }
